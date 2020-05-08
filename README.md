@@ -1,7 +1,7 @@
 # csc413-SecondGame
 
-## Student Name  :
-## Student ID    :
+## Student Name  :  Claire McCullough
+## Student ID    :  917390856
 
 
 ## src folder is to be used to store source code only.
