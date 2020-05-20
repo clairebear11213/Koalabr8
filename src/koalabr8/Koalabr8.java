@@ -58,6 +58,7 @@ public class Koalabr8 extends JPanel  {
     ArrayList<TimedLock> tls;
     ArrayList<PressureLock> pls;
     ArrayList<TNT> tnts;
+//    ArrayList<Saw> saws;
 //    ArrayList<Long> counts;
 ////    ArrayList<Health> tankOneHearts;
 ////    ArrayList<Health> tankTwoHearts;
@@ -74,6 +75,7 @@ public class Koalabr8 extends JPanel  {
         try {
 
             while (true) {
+//                koalaExample.saws.forEach(s -> s.move());
                 if (koalaExample.koalas.size() == 0) {
                     level = -1;
                     System.out.println("You win! :)");
@@ -124,9 +126,13 @@ public class Koalabr8 extends JPanel  {
                     //boulders
                     for (int k = 0; k < koalaExample.boulders.size(); k++) {
                         boulderBump(KX, KY, koalaExample.boulders.get(k).getX(), koalaExample.boulders.get(k).getY(), koalaExample.koalas.get(i), koalaExample.boulders.get(k));
+                        for (int w = 0; w < koalaExample.walls.size(); w++) {
+                            boulderWall(koalaExample.boulders.get(k), koalaExample.walls.get(w));
+                        }
                     }
                     //tnt
-                    for (int k = 0; k < koalaExample.tnts.size(); k++) {
+                    int tntSize = koalaExample.tnts.size();
+                    for (int k = 0; k < tntSize; k++) {
                         tntBump(koalaExample.koalas.get(i), koalaExample.tnts.get(k));
                     }
                     //normal switch
@@ -187,6 +193,18 @@ public class Koalabr8 extends JPanel  {
                                 koalaExample.koalas.remove(i);
                                 eSize--;
                             }
+                        }
+                    }
+                }
+                int tntSize = koalaExample.tnts.size();
+                int bSize = koalaExample.boulders.size();
+                for (int t = 0; t < tntSize; t++) {
+                    for (int b = 0; b < bSize; b++) {
+                        if (koalaExample.boulders.get(b).getHitBox().intersects(koalaExample.tnts.get(t).getHitBox())) {
+                            koalaExample.boulders.remove(b);
+                            koalaExample.tnts.remove(t);
+                            bSize--;
+                            tntSize--;
                         }
                     }
                 }
@@ -480,6 +498,7 @@ public class Koalabr8 extends JPanel  {
         pls = new ArrayList<>();
         tls = new ArrayList<>();
         tnts = new ArrayList<>();
+//        saws = new ArrayList<>();
         koalas = new ArrayList<>();
         try {
 //            //Using class loaders to read in resources
@@ -584,6 +603,8 @@ public class Koalabr8 extends JPanel  {
                     }
                 }
             }
+//            Saw s = new Saw(1200, 200, 90, 400, 200, saw);
+//            this.saws.add(s);
 
 
         } catch (IOException ex) {
@@ -709,19 +730,19 @@ public class Koalabr8 extends JPanel  {
             //if K.X < B.X:
                 //move B++
                 //keep K where it is
-            //if K.X > W.X:
+            //if K.X > B.X:
                 //move B--
                 //keep K where it is
-            //repeat w/ K.Y and W.Y
-        if (koala.getHitBox().intersects(boulder.getHitBox())) {
-            if (koalaY < boulderY && koalaY > boulderY - 50) {
-                if (boulderY >= Koalabr8.WORLD_HEIGHT - 100) {
-                    koala.setY(koalaY - move);
-                } else {
-                    boulder.setY(boulderY + move);
+            //repeat w/ K.Y and B.Y
+        if (koala.getHitBox().intersects(boulder.getHitBox())) {    //if K is touching B
+            if (koalaY < boulderY && koalaY > boulderY - 50) {      //if K is on top
+                if (boulderY >= Koalabr8.WORLD_HEIGHT - 100) {      //if B against lower wall
+                    koala.setY(koalaY - move);                          //move koala up
+                } else {                                            //else
+                    boulder.setY(boulderY + move);                      //move boulder down
                 }
-            } else if (koalaY > boulderY && koalaY < boulderY + 50) {
-                if (boulderY <= 50) {
+            } else if (koalaY > boulderY && koalaY < boulderY + 50) {   //if K below
+                if (boulderY <= 50) {                                   //if B against top
                     koala.setY(koalaY + move);
                 } else {
                     boulder.setY(boulderY - move);
@@ -738,6 +759,20 @@ public class Koalabr8 extends JPanel  {
                 } else {
                     boulder.setX(boulderX - move);
                 }
+            }
+        }
+    }
+
+    public static void boulderWall(Boulder boulder, Wall wall) {
+        if (boulder.getHitBox().intersects(wall.getHitBox())) {
+            if (boulder.getY() < wall.getY() && boulder.getY() > wall.getY() - 50) {
+                boulder.setY(boulder.getY() - move);
+            } else if (boulder.getY() > wall.getY() && boulder.getY() < wall.getY() + 50) {
+                boulder.setY(boulder.getY() + move);
+            } else if (boulder.getX() < wall.getX() && boulder.getX() > wall.getX() - 50) {
+                boulder.setX(boulder.getX() - move);
+            } else if (boulder.getX() > wall.getX() && boulder.getX() < wall.getX() + 50) {
+                boulder.setX(boulder.getX() + move);
             }
         }
     }
@@ -770,6 +805,7 @@ public class Koalabr8 extends JPanel  {
             this.tls.forEach(l -> l.drawImage(buffer));
             this.pls.forEach(l -> l.drawImage(buffer));
             this.tnts.forEach(t -> t.drawImage(buffer));
+//            this.saws.forEach(s -> s.drawImage(buffer));
 //            this.koalaOne.drawImage(buffer);
 //            this.koalaTwo.drawImage(buffer);
 //            this.koalaThree.drawImage(buffer);
