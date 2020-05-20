@@ -43,6 +43,7 @@ public class Koalabr8 extends JPanel  {
     private koalabr8.Koala koalaThree;
     static long tickCount = 0;
     public static int level = 1;
+    public static int count = 0;
 ////    //Object[][] walls;
 ////    //Wall[][] walls;
     ArrayList<Koala> koalas;
@@ -78,7 +79,10 @@ public class Koalabr8 extends JPanel  {
 //                koalaExample.saws.forEach(s -> s.move());
                 if (koalaExample.koalas.size() == 0) {
                     level = -1;
-                    System.out.println("You win! :)");
+                    count++;
+                    if (count < 3) {
+                        System.out.println("You win! :)");
+                    }
                 }
                 for (int i = 0; i < koalaExample.koalas.size(); i++) {
                     koalaExample.koalas.get(i).update();
@@ -780,7 +784,10 @@ public class Koalabr8 extends JPanel  {
     public static void tntBump(Koala koala, TNT tnt) {
         if (koala.getHitBox().intersects(tnt.getHitBox())) {
             level = 0;
-            System.out.println("You have died. :(");
+            count++;
+            if (count < 3) {
+                System.out.println("You died. :(");
+            }
         }
     }
 
