@@ -34,6 +34,11 @@ public class Boulder {
         this.y = y;
     }
 
+    public void updateHitBox(int newX, int newY) {
+        this.hitBox.x = newX;
+        this.hitBox.y = newY;
+    }
+
     public Rectangle getHitBox() {
         return hitBox.getBounds();
     }

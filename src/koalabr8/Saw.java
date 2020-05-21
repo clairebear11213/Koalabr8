@@ -31,39 +31,65 @@ public class Saw {
         return hitBox.getBounds();
     }
 
+    public void updateHitBox(int newX, int newY) {
+        this.hitBox.x = newX;
+        this.hitBox.y = newY;
+    }
+
     public void move() {
-        if (angle == 0 || angle == 180) {   //horizontal
-            if (startpt < endpt) {          // --->
-                for (int d = startpt; d <= endpt; d++) {
-                    x++;
-                }
+        if (angle == 90 || angle == 270) {   //horizontal
+            if (x == endpt) {    //at end
                 int temp = startpt;
                 startpt = endpt;
                 endpt = temp;
-            } else if (startpt > endpt) {   // <---
-                for (int d = startpt; d >= endpt; d--) {
+            } else {    //at beginning or somewhere in the middle
+                if (startpt < endpt) {          // --->
+                    x++;
+                } else if (startpt > endpt) {   // <---
                     x--;
                 }
-                int temp = startpt;
-                startpt = endpt;
-                endpt = temp;
             }
-        } else if (angle == 90 || angle == 270) {   //vertical
-            if (startpt < endpt) {          // --->
-                for (int d = startpt; d <= endpt; d++) {
-                    y++;
-                }
+//                for (int d = startpt; d <= endpt; d++) {
+//                    x++;
+//                }
+//                int temp = startpt;
+//                startpt = endpt;
+//                endpt = temp;
+//            }
+//                for (int d = startpt; d >= endpt; d--) {
+//                    x--;
+//                }
+//                int temp = startpt;
+//                startpt = endpt;
+//                endpt = temp;
+//            }
+        } else if (angle == 0 || angle == 180) {   //vertical
+            if (y == endpt) {    //at end
                 int temp = startpt;
                 startpt = endpt;
                 endpt = temp;
-            } else if (startpt > endpt) {   // <---
-                for (int d = startpt; d >= endpt; d--) {
+            } else {    //at beginning or somewhere in the middle
+                if (startpt < endpt) {          // --->
+                    y++;
+                } else if (startpt > endpt) {   // <---
                     y--;
                 }
-                int temp = startpt;
-                startpt = endpt;
-                endpt = temp;
             }
+//            if (startpt < endpt) {          // --->
+//                for (int d = startpt; d <= endpt; d++) {
+//                    y++;
+//                }
+//                int temp = startpt;
+//                startpt = endpt;
+//                endpt = temp;
+//            } else if (startpt > endpt) {   // <---
+//                for (int d = startpt; d >= endpt; d--) {
+//                    y--;
+//                }
+//                int temp = startpt;
+//                startpt = endpt;
+//                endpt = temp;
+//            }
         }
     }
 

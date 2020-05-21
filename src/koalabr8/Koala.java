@@ -123,6 +123,8 @@ public class Koala {
         if (this.RightPressed) {
             this.moveRight();
         }
+        this.hitBox.x = x;
+        this.hitBox.y = y;
     }
 
     //move

@@ -9,6 +9,7 @@ package koalabr8;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -20,12 +21,13 @@ import static javax.imageio.ImageIO.read;
 
 
 /**
- * Main driver class of Tank Example.
+ * Main driver class of Koala Example.
  * Class is responsible for loading resources and
  * initializing game objects. Once completed, control will
  * be given to infinite loop which will act as our game loop.
  * A very simple game loop.
- * @author anthony-pc
+ * @originalauthor anthony-pc
+ * @updated Claire McCullough Spring 2020
  */
 public class Koalabr8 extends JPanel  {
 
@@ -35,22 +37,23 @@ public class Koalabr8 extends JPanel  {
     public static final int SCREEN_HEIGHT = 700;    //14 rows
     public static final int move = 2;
     private BufferedImage world;
-//    public static BufferedImage bulletImage;
     private Graphics2D buffer;
     private JFrame jFrame;
     private koalabr8.Koala koalaOne;
     private koalabr8.Koala koalaTwo;
     private koalabr8.Koala koalaThree;
     static long tickCount = 0;
+
     public static int level = 1;
     public static int count = 0;
-////    //Object[][] walls;
-////    //Wall[][] walls;
+//    public static int sawCount = 0;
+
     ArrayList<Koala> koalas;
     ArrayList<Wall> walls;
     ArrayList<Boulder> boulders;
 //    ArrayList<Switch> switches;
     ArrayList<NormalSwitch> nss;
+    ArrayList<FakeSwitch> fss;
     ArrayList<TimedSwitch> tss;
     ArrayList<PressureSwitch> pss;
     ArrayList<Exit> exits;
@@ -58,15 +61,11 @@ public class Koalabr8 extends JPanel  {
     ArrayList<NormalLock> nls;
     ArrayList<TimedLock> tls;
     ArrayList<PressureLock> pls;
+    ArrayList<PressureLock> ogpls;
     ArrayList<TNT> tnts;
-//    ArrayList<Saw> saws;
-//    ArrayList<Long> counts;
-////    ArrayList<Health> tankOneHearts;
-////    ArrayList<Health> tankTwoHearts;
-////    ArrayList<Health> tankOneHealth;
-////    ArrayList<Health> tankTwoHealth;
-////    private tankrotationexample.Tank tankOneLife;
-////    private tankrotationexample.Tank tankTwoLife;
+    ArrayList<Saw> saws;
+    ArrayList<Long> tsCounts;
+    ArrayList<Boolean> psHits;
 
 
 
@@ -76,15 +75,30 @@ public class Koalabr8 extends JPanel  {
         try {
 
             while (true) {
+                for (int s = 0; s < koalaExample.saws.size(); s++) {
+                    koalaExample.saws.get(s).move();
+                    koalaExample.saws.get(s).updateHitBox(koalaExample.saws.get(s).getX(), koalaExample.saws.get(s).getY());
+                }
 //                koalaExample.saws.forEach(s -> s.move());
-                if (koalaExample.koalas.size() == 0) {
-                    level = -1;
-                    count++;
-                    if (count < 3) {
-                        System.out.println("You win! :)");
+                int koalaSize = koalaExample.koalas.size();
+                if (koalaSize == 0) {
+                    if (level == 1) {
+                        System.out.println("You passed level 1! :)");
+                        level = 2;
+                        koalaExample.init();
+                    } else if (level == 2) {
+                        System.out.println("You passed level 2! :)");
+                        level = 3;
+                        koalaExample.init();
+                    } else {
+                        level = -1;
+                        count++;
+                        if (count == 1) {
+                            System.out.println("You win the game! :)");
+                        }
                     }
                 }
-                for (int i = 0; i < koalaExample.koalas.size(); i++) {
+                for (int i = 0; i < koalaSize; i++) {
                     koalaExample.koalas.get(i).update();
                 }
 //                koalaExample.koalaOne.update();
@@ -94,8 +108,8 @@ public class Koalabr8 extends JPanel  {
                 koalaExample.repaint();
                 tickCount++;
                 //make sure koalas do not overlap with koalas
-                for (int i = 0; i < koalaExample.koalas.size() - 1; i++) {
-                    for (int j = i + 1; j < koalaExample.koalas.size(); j++) {
+                for (int i = 0; i < koalaSize - 1; i++) {
+                    for (int j = i + 1; j < koalaSize; j++) {
                         int oneX = koalaExample.koalas.get(i).getX();
                         int oneY = koalaExample.koalas.get(i).getY();
                         int twoX = koalaExample.koalas.get(j).getX();
@@ -104,7 +118,7 @@ public class Koalabr8 extends JPanel  {
                         koalaBump(oneX, oneY, twoX, twoY, koalaExample.koalas.get(i), koalaExample.koalas.get(j));
                         //bump K and walls
                         for (int k = 0; k < koalaExample.walls.size(); k++) {
-                            if (i == koalaExample.koalas.size() - 2) {
+                            if (i == koalaSize - 2) {
                                 wallBump(twoX, twoY, koalaExample.walls.get(k).getX(), koalaExample.walls.get(k).getY(), koalaExample.koalas.get(j), koalaExample.walls.get(k));
                             } else {
                                 wallBump(oneX, oneY, koalaExample.walls.get(k).getX(), koalaExample.walls.get(k).getY(), koalaExample.koalas.get(i), koalaExample.walls.get(k));
@@ -112,34 +126,117 @@ public class Koalabr8 extends JPanel  {
                         }
                     }
                 }
-                for (int i = 0; i < koalaExample.koalas.size(); i++) {
+                //koala x ...
+                for (int i = 0; i < koalaSize; i++) {
                     int KX = koalaExample.koalas.get(i).getX();
                     int KY = koalaExample.koalas.get(i).getY();
-                    //normal lock
+                    // x normal lock
                     for (int k = 0; k < koalaExample.nls.size(); k++) {
                         lockBump(KX, KY, koalaExample.nls.get(k).getX(), koalaExample.nls.get(k).getY(), koalaExample.koalas.get(i), koalaExample.nls.get(k));
                     }
-                    //timed lock
+                    // x timed lock
                     for (int k = 0; k < koalaExample.tls.size(); k++) {
                         lockBump(KX, KY, koalaExample.tls.get(k).getX(), koalaExample.tls.get(k).getY(), koalaExample.koalas.get(i), koalaExample.tls.get(k));
                     }
-                    //pressure lock
+                    // x pressure lock
                     for (int k = 0; k < koalaExample.pls.size(); k++) {
                         lockBump(KX, KY, koalaExample.pls.get(k).getX(), koalaExample.pls.get(k).getY(), koalaExample.koalas.get(i), koalaExample.pls.get(k));
                     }
-                    //boulders
-                    for (int k = 0; k < koalaExample.boulders.size(); k++) {
+                    // x boulders
+                    int bSize = koalaExample.boulders.size();
+                    for (int k = 0; k < bSize; k++) {
+                        for (int b = k + 1; b < bSize; b++) {
+                            boulderBoulder(koalaExample.boulders.get(k), koalaExample.boulders.get(b));
+                        }
+                        if (k >= bSize || i >= koalaSize || i < 0 || k < 0) { break;}
                         boulderBump(KX, KY, koalaExample.boulders.get(k).getX(), koalaExample.boulders.get(k).getY(), koalaExample.koalas.get(i), koalaExample.boulders.get(k));
+                        //boulder x wall
                         for (int w = 0; w < koalaExample.walls.size(); w++) {
+                            if (k >= bSize || i >= koalaSize || i < 0 || k < 0 || w >= koalaExample.walls.size()) { break;}
+//                            System.out.println("hit" + w);
                             boulderWall(koalaExample.boulders.get(k), koalaExample.walls.get(w));
                         }
+                        //boulder x tnt
+                        int tntSize = koalaExample.tnts.size();
+                        for (int t = 0; t < tntSize; t++) {
+                            if (k >= bSize || i >= koalaSize || i < 0 || k < 0 || t >= tntSize) { break;}
+//                            System.out.println(k + " " + t);
+                            if (koalaExample.boulders.get(k).getHitBox().intersects(koalaExample.tnts.get(t).getHitBox())) {
+//                                System.out.println("hit" + k);
+                                koalaExample.boulders.remove(k);
+                                koalaExample.tnts.remove(t);
+                                bSize--;
+                                tntSize--;
+                            }
+                        }
+                        if (k >= bSize || i >= koalaSize || i < 0 || k < 0) { break;}
+                        //boulder x saw
+                        int sawSize = koalaExample.saws.size();
+                        for (int s = 0; s < sawSize; s++) {
+                            if (k >= bSize || i >= koalaSize || i < 0 || k < 0 || s >= sawSize) { break;}
+                            if (koalaExample.boulders.get(k).getHitBox().intersects(koalaExample.saws.get(s).getHitBox())) {
+//                                System.out.println("hit");
+                                koalaExample.boulders.remove(k);
+                                koalaExample.saws.remove(s);
+                                bSize--;
+                                sawSize--;
+                            }
+                        }
+                        if (k >= bSize || i >= koalaSize || i < 0 || k < 0) { break;}
+                        //boulder x normal switch
+                        int nssSize = koalaExample.nss.size();
+                        for (int n = 0; n < nssSize; n++) {
+                            if (k < 0 || k >= nssSize) {
+                                break;
+                            }
+                            if (koalaExample.boulders.get(k).getHitBox().intersects(koalaExample.nss.get(n).getHitBox())) {
+                                koalaExample.nss.remove(n);
+                                koalaExample.nls.remove(n);
+                                nssSize--;
+                            }
+                        }
+                        //boulder x timed switch
+                        int tssSize = koalaExample.tss.size();
+                        for (int t = 0; t < tssSize; t++) {
+                            if (k < 0 || k >= tssSize) {
+                                break;
+                            }
+                            if (koalaExample.boulders.get(k).getHitBox().intersects(koalaExample.tss.get(t).getHitBox())) {
+                                koalaExample.tsCounts.set(t, koalaExample.tsCounts.get(t) + 1);
+                                if (koalaExample.tsCounts.get(t) >= 100) {
+                                    koalaExample.tss.remove(t);
+                                    koalaExample.tsCounts.remove(t);
+                                    koalaExample.tls.remove(t);
+                                    tssSize--;
+                                }
+                            }
+                        }
+                        //boulder x pressure switch
+                        int plsSize = koalaExample.pls.size();
+                        for (int p = 0; p < plsSize; p++) {
+                            if (koalaExample.boulders.get(k).getHitBox().intersects(koalaExample.pss.get(p).getHitBox())) {
+                                koalaExample.psHits.set(p, true);
+                                if (koalaExample.psHits.get(p) == true) {
+                                    koalaExample.pls.remove(p);
+                                    plsSize--;
+                                } else {
+                                    koalaExample.pls.add(p, koalaExample.ogpls.get(p));
+                                    plsSize++;
+                                }
+                            }
+                        }
                     }
-                    //tnt
+                    // x tnt
                     int tntSize = koalaExample.tnts.size();
                     for (int k = 0; k < tntSize; k++) {
                         tntBump(koalaExample.koalas.get(i), koalaExample.tnts.get(k));
                     }
-                    //normal switch
+                    // x saws
+                    int sawSize = koalaExample.saws.size();
+                    for (int k = 0; k < sawSize; k++) {
+                        sawBump(koalaExample.koalas.get(i), koalaExample.saws.get(k));
+                    }
+                    // x normal switch
                     int nssSize = koalaExample.nss.size();
                     for (int k = 0; k < nssSize; k++) {
                         if (i < 0 || i >= nssSize) {
@@ -151,116 +248,93 @@ public class Koalabr8 extends JPanel  {
                             nssSize--;
                         }
                     }
-                    //timed switch
+                    // x timed switch
                     int tssSize = koalaExample.tss.size();
                     for (int k = 0; k < tssSize; k++) {
-                        int c = 0;
                         if (i < 0 || i >= tssSize) {
                             break;
                         }
-                        while (koalaExample.koalas.get(i).getHitBox().intersects(koalaExample.tss.get(k).getHitBox())) {
-                            c++;
-                            if (c >= 1000) {
+                        if (koalaExample.koalas.get(i).getHitBox().intersects(koalaExample.tss.get(k).getHitBox())) {
+                            koalaExample.tsCounts.set(k, koalaExample.tsCounts.get(k) + 1);
+//                            System.out.println(koalaExample.tsCounts.get(k));
+                            if (koalaExample.tsCounts.get(k) >= 100) {
                                 koalaExample.tss.remove(k);
+                                koalaExample.tsCounts.remove(k);
                                 koalaExample.tls.remove(k);
                                 tssSize--;
-                                break;
                             }
+                        } else {
+//                            koalaExample.tsCounts.set(k, (long)0);
+//                            System.out.println(koalaExample.tsCounts.get(k));
                         }
+//                        while (koalaExample.koalas.get(i).getHitBox().intersects(koalaExample.tss.get(k).getHitBox())) {
+//                            c++;
+//                            if (c >= 1000) {
+//                                koalaExample.tss.remove(k);
+//                                koalaExample.tls.remove(k);
+//                                tssSize--;
+//                                break;
+//                            }
+//                        }
                     }
-                    //pressure switch
+                    // x pressure switch
                     int plsSize = koalaExample.pls.size();
-                    boolean isHit = false;
                     for (int k = 0; k < plsSize; k++) {
-                        if (i < 0 || i >= plsSize) {
-                            break;
-                        }
                         if (koalaExample.koalas.get(i).getHitBox().intersects(koalaExample.pss.get(k).getHitBox())) {
-                            koalaExample.pss.remove(k);
-                            koalaExample.pls.remove(k);
-                            plsSize--;
+                            koalaExample.psHits.set(k, true);
+                            if (koalaExample.psHits.get(k) == true) {
+                                koalaExample.pls.remove(k);
+                                plsSize--;
+                            } else {
+                                koalaExample.pls.add(k, koalaExample.ogpls.get(k));
+                                plsSize++;
+                            }
+                        } else {
+//                            koalaExample.psHits.set(k, false);
                         }
+//                        if (i < 0 || i >= plsSize) {
+//                            break;
+//                        }
+//                        if (koalaExample.koalas.get(i).getHitBox().intersects(koalaExample.pss.get(k).getHitBox())) {
+//                            koalaExample.pss.remove(k);
+//                            koalaExample.pls.remove(k);
+//                            plsSize--;
+//                        }
                     }
-                    //exits
+                    // x exits
                     int eSize = koalaExample.exits.size();
                     for (int k = 0; k < eSize; k++) {
-                        if (i < 0 || i >= eSize) {
+                        if (i < 0 || i >= eSize || i >= koalaSize) {
                             break;
                         }
                         if (koalaExample.koalas.get(i).getHitBox().intersects(koalaExample.exits.get(k).getHitBox())) {
                             if (koalaExample.exits.get(k).getType() == "red") {
                                 //if red exit - remove koala
                                 koalaExample.koalas.remove(i);
+                                koalaSize--;
                             } else if (koalaExample.exits.get(k).getType() == "blue") {
                                 //if blue exit - remove koala, remove exit
                                 koalaExample.exits.remove(k);
                                 koalaExample.koalas.remove(i);
+                                koalaSize--;
                                 eSize--;
                             }
                         }
                     }
                 }
-                int tntSize = koalaExample.tnts.size();
-                int bSize = koalaExample.boulders.size();
-                for (int t = 0; t < tntSize; t++) {
-                    for (int b = 0; b < bSize; b++) {
-                        if (koalaExample.boulders.get(b).getHitBox().intersects(koalaExample.tnts.get(t).getHitBox())) {
-                            koalaExample.boulders.remove(b);
-                            koalaExample.tnts.remove(t);
-                            bSize--;
-                            tntSize--;
-                        }
-                    }
-                }
+//                int tntSize = koalaExample.tnts.size();
+//                int bSize = koalaExample.boulders.size();
+//                for (int t = 0; t < tntSize; t++) {
+//                    for (int b = 0; b < bSize; b++) {
+//                        if (koalaExample.boulders.get(b).getHitBox().intersects(koalaExample.tnts.get(t).getHitBox())) {
+//                            koalaExample.boulders.remove(b);
+//                            koalaExample.tnts.remove(t);
+//                            bSize--;
+//                            tntSize--;
+//                        }
+//                    }
+//                }
 
-//                int oneX = koalaExample.koalas.get(0).getX();
-//                int oneY = koalaExample.koalas.get(0).getY();
-//                int twoX = koalaExample.koalas.get(1).getX();
-//                int twoY = koalaExample.koalas.get(1).getY();
-//                int threeX = koalaExample.koalas.get(2).getX();
-//                int threeY = koalaExample.koalas.get(2).getY();
-//                //bump K1 & K2
-//                koalaBump(oneX, oneY, twoX, twoY, koalaExample.koalas.get(0), koalaExample.koalas.get(1));
-//                //bump K2 & K3
-//                koalaBump(twoX, twoY, threeX, threeY, koalaExample.koalas.get(1), koalaExample.koalas.get(2));
-//                //bump K1 & K3
-//                koalaBump(oneX, oneY, threeX, threeY, koalaExample.koalas.get(0), koalaExample.koalas.get(2));
-//                //make sure koalas do not overlap with walls
-//                for (int i = 0; i < koalaExample.walls.size(); i++) {
-//                    //bump K1 & walls
-//                    wallBump(oneX, oneY, koalaExample.walls.get(i).getX(), koalaExample.walls.get(i).getY(), koalaExample.koalas.get(0), koalaExample.walls.get(i));
-//                    //bump K2 & walls
-//                    wallBump(twoX, twoY, koalaExample.walls.get(i).getX(), koalaExample.walls.get(i).getY(), koalaExample.koalas.get(1), koalaExample.walls.get(i));
-//                    //bump K3 & walls
-//                    wallBump(threeX, threeY, koalaExample.walls.get(i).getX(), koalaExample.walls.get(i).getY(), koalaExample.koalas.get(2), koalaExample.walls.get(i));
-//                }
-//                //make sure koalas do not overlap with normal locks
-//                for (int i = 0; i < koalaExample.nls.size(); i++) {
-//                    //bump K1 & locks
-//                    lockBump(oneX, oneY, koalaExample.nls.get(i).getX(), koalaExample.nls.get(i).getY(), koalaExample.koalas.get(0), koalaExample.nls.get(i));
-//                    //bump K2 & locks
-//                    lockBump(twoX, twoY, koalaExample.nls.get(i).getX(), koalaExample.nls.get(i).getY(), koalaExample.koalas.get(1), koalaExample.nls.get(i));
-//                    //bump K3 & locks
-//                    lockBump(threeX, threeY, koalaExample.nls.get(i).getX(), koalaExample.nls.get(i).getY(), koalaExample.koalas.get(2), koalaExample.nls.get(i));
-//                }
-//                //make sure koalas do not overlap with timed locks
-//                for (int i = 0; i < koalaExample.tls.size(); i++) {
-//                    //bump K1 & locks
-//                    lockBump(oneX, oneY, koalaExample.tls.get(i).getX(), koalaExample.tls.get(i).getY(), koalaExample.koalas.get(0), koalaExample.tls.get(i));
-//                    //bump K2 & locks
-//                    lockBump(twoX, twoY, koalaExample.tls.get(i).getX(), koalaExample.tls.get(i).getY(), koalaExample.koalas.get(1), koalaExample.tls.get(i));
-//                    //bump K3 & locks
-//                    lockBump(threeX, threeY, koalaExample.tls.get(i).getX(), koalaExample.tls.get(i).getY(), koalaExample.koalas.get(2), koalaExample.tls.get(i));
-//                }
-//                //make sure koalas do not overlap with pressure locks
-//                for (int i = 0; i < koalaExample.pls.size(); i++) {
-//                    //bump K1 & locks
-//                    lockBump(oneX, oneY, koalaExample.pls.get(i).getX(), koalaExample.pls.get(i).getY(), koalaExample.koalas.get(0), koalaExample.pls.get(i));
-//                    //bump K2 & locks
-//                    lockBump(twoX, twoY, koalaExample.pls.get(i).getX(), koalaExample.pls.get(i).getY(), koalaExample.koalas.get(1), koalaExample.pls.get(i));
-//                    //bump K3 & locks
-//                    lockBump(threeX, threeY, koalaExample.pls.get(i).getX(), koalaExample.pls.get(i).getY(), koalaExample.koalas.get(2), koalaExample.pls.get(i));
-//                }
 //                //koalas push boulders
 //                for (int i = 0; i < koalaExample.boulders.size(); i++) {
 //                    //bump K1 & boulders
@@ -269,18 +343,6 @@ public class Koalabr8 extends JPanel  {
 //                    boulderBump(twoX, twoY, koalaExample.boulders.get(i).getX(), koalaExample.boulders.get(i).getY(), koalaExample.koalas.get(1), koalaExample.boulders.get(i));
 //                    //bump K3 & boulders
 //                    boulderBump(threeX, threeY, koalaExample.boulders.get(i).getX(), koalaExample.boulders.get(i).getY(), koalaExample.koalas.get(2), koalaExample.boulders.get(i));
-//                }
-//                //koalas hit tnt
-//                for (int i = 0; i < koalaExample.tnts.size(); i++) {
-//                    for (int j = 0; j < koalaExample.koalas.size(); j++) {
-//                        tntBump(koalaExample.koalas.get(j), koalaExample.tnts.get(i));
-//                    }
-//                    //bump K1 & tnts
-//                    tntBump(oneX, oneY, koalaExample.tnts.get(i).getX(), koalaExample.tnts.get(i).getY(), koalaExample.koalaOne, koalaExample.tnts.get(i));
-//                    //bump K2 & tnts
-//                    tntBump(twoX, twoY, koalaExample.tnts.get(i).getX(), koalaExample.tnts.get(i).getY(), koalaExample.koalaTwo, koalaExample.tnts.get(i));
-//                    //bump K3 & tnts
-//                    tntBump(threeX, threeY, koalaExample.tnts.get(i).getX(), koalaExample.tnts.get(i).getY(), koalaExample.koalaThree, koalaExample.tnts.get(i));
 //                }
                 //koalas press switches - 1: normal, 2: timed, 3: pressure
 //                int switchSize = koalaExample.switches.size();
@@ -429,42 +491,6 @@ public class Koalabr8 extends JPanel  {
 //                    }
 //                }
                 //do not remove switches, just remove them from the list?
-                //koalas hit exits - red, blue
-//                int eSize = koalaExample.exits.size();
-//                for (int i = 0; i < eSize; i++) {
-//                    for (int j = 0; j < koalaExample.koalas.size(); j++) {
-//                        if (i < 0 || i >= eSize) { break; }
-//                        if (koalaExample.koalas.get(j).getHitBox().intersects(koalaExample.exits.get(i).getHitBox())) {
-////                        if (koalaExample.koalaOne.getHitBox().intersects(koalaExample.exits.get(i).getHitBox())) {
-//                            if (koalaExample.exits.get(i).getType() == "red") {
-//                                //if red exit - remove koala
-//                                koalaExample.koalas.remove(j);
-//                            } else if (koalaExample.exits.get(i).getType() == "blue") {
-//                                //if blue exit - remove koala, remove exit
-//                                koalaExample.exits.remove(i);
-//                                koalaExample.koalas.remove(j);
-//                                eSize--;
-//                            }
-//                        } else if (koalaExample.koalaTwo.getHitBox().intersects(koalaExample.exits.get(i).getHitBox())) {
-//                            if (koalaExample.exits.get(i).getType() == "red") {
-//                                //if red exit - remove koala
-//                            } else if (koalaExample.exits.get(i).getType() == "blue") {
-//                                //if blue exit - remove koala, remove exit
-//                                koalaExample.exits.remove(i);
-//                                eSize--;
-//                            }
-//                        } else if (koalaExample.koalaThree.getHitBox().intersects(koalaExample.exits.get(i).getHitBox())) {
-//                            if (koalaExample.exits.get(i).getType() == "red") {
-//                                //if red exit - remove koala
-//                            } else if (koalaExample.exits.get(i).getType() == "blue") {
-//                                //if blue exit - remove koala, remove exit
-//                                koalaExample.exits.remove(i);
-//                                eSize--;
-//                            }
-//                        }
-//                    }
-//                }
-
 
                 Thread.sleep(1000 / 144);
             }
@@ -481,7 +507,7 @@ public class Koalabr8 extends JPanel  {
         BufferedImage koalaImage = null;
         BufferedImage wall = null;
         BufferedImage tnt = null;
-//        BufferedImage saw = null;
+        BufferedImage saw = null;
         BufferedImage redExit = null;
         BufferedImage blueExit = null;
         BufferedImage normalLock = null;
@@ -495,21 +521,25 @@ public class Koalabr8 extends JPanel  {
         boulders = new ArrayList<>();
 //        switches = new ArrayList<>();
         nss = new ArrayList<>();
+        fss = new ArrayList<>();
         tss = new ArrayList<>();
         pss = new ArrayList<>();
         exits = new ArrayList<>();
         nls = new ArrayList<>();
         pls = new ArrayList<>();
+        ogpls = new ArrayList<>();
         tls = new ArrayList<>();
         tnts = new ArrayList<>();
-//        saws = new ArrayList<>();
+        saws = new ArrayList<>();
         koalas = new ArrayList<>();
+        tsCounts = new ArrayList<>();
+        psHits = new ArrayList<>();
         try {
 //            //Using class loaders to read in resources
             koalaImage = read(Koalabr8.class.getClassLoader().getResource("koala.png"));
             wall = read(Koalabr8.class.getClassLoader().getResource("wall.png"));
             tnt = read(Koalabr8.class.getClassLoader().getResource("tnt.png"));
-//            saw = read(Koalabr8.class.getClassLoader().getResource("saw.png"));
+            saw = read(Koalabr8.class.getClassLoader().getResource("saw.png"));
             redExit = read(Koalabr8.class.getClassLoader().getResource("redexit.png"));
             blueExit = read(Koalabr8.class.getClassLoader().getResource("blueexit.png"));
             normalLock = read(Koalabr8.class.getClassLoader().getResource("redlock.png"));
@@ -519,10 +549,15 @@ public class Koalabr8 extends JPanel  {
             timedSwitch = read(Koalabr8.class.getClassLoader().getResource("timedswitch.png"));
             pressureSwitch = read(Koalabr8.class.getClassLoader().getResource("pressureswitch.png"));
             boulder = read(Koalabr8.class.getClassLoader().getResource("boulder.png"));
-//            //TankRotationExample.class.getClassLoader().getResourceAsStream();
-//            //Using file objects to read in resources.
-//            //tankImage = read(new File("resources/tank1.png"));
-            InputStreamReader isr = new InputStreamReader(Koalabr8.class.getClassLoader().getResourceAsStream("maps/lvl1"));
+
+            InputStreamReader isr = null;
+            if (level == 1) {
+                isr = new InputStreamReader(Koalabr8.class.getClassLoader().getResourceAsStream("maps/lvl1"));
+            } else if (level == 2) {
+                isr = new InputStreamReader(Koalabr8.class.getClassLoader().getResourceAsStream("maps/lvl2"));
+            } else if (level == 3) {
+                isr = new InputStreamReader(Koalabr8.class.getClassLoader().getResourceAsStream("maps/lvl3"));
+            }
             BufferedReader mapReader = new BufferedReader(isr);
 
             String row = mapReader.readLine();
@@ -552,12 +587,16 @@ public class Koalabr8 extends JPanel  {
                             TimedSwitch ts = new TimedSwitch(curCol*50, curRow*50, timedSwitch);
                             this.tss.add(ts);
 //                            this.switches.add(ts);
+                            long c = 0;
+                            this.tsCounts.add(c);
                             break;
                         case "d":
                             //pressure switch
                             PressureSwitch ps = new PressureSwitch(curCol*50, curRow*50, pressureSwitch);
                             this.pss.add(ps);
 //                            this.switches.add(ps);
+                            boolean h = false;
+                            this.psHits.add(h);
                             break;
                         case "e":
                             //normal lock
@@ -573,6 +612,7 @@ public class Koalabr8 extends JPanel  {
                             //pressure lock
                             PressureLock pl = new PressureLock(curCol*50, curRow*50, pressureLock);
                             this.pls.add(pl);
+                            this.ogpls.add(pl);
                             break;
                         case "h":
                             //red exit
@@ -604,12 +644,17 @@ public class Koalabr8 extends JPanel  {
                             Wall w = new Wall(curCol*50, curRow*50, wall);
                             this.walls.add(w);
                             break;
+                        case "n":
+                            FakeSwitch fs = new FakeSwitch(curCol*50, curRow*50, normalSwitch);
+                            this.fss.add(fs);
+                            break;
                     }
                 }
             }
-//            Saw s = new Saw(1200, 200, 90, 400, 200, saw);
-//            this.saws.add(s);
-
+            if (level == 1) {
+                Saw s = new Saw(200, 250, 90, 200, 550, saw);
+                this.saws.add(s);
+            }
 
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
@@ -765,10 +810,12 @@ public class Koalabr8 extends JPanel  {
                 }
             }
         }
+        boulder.updateHitBox(boulder.getX(), boulder.getY());
     }
 
     public static void boulderWall(Boulder boulder, Wall wall) {
         if (boulder.getHitBox().intersects(wall.getHitBox())) {
+//            System.out.println("hit");
             if (boulder.getY() < wall.getY() && boulder.getY() > wall.getY() - 50) {
                 boulder.setY(boulder.getY() - move);
             } else if (boulder.getY() > wall.getY() && boulder.getY() < wall.getY() + 50) {
@@ -779,15 +826,64 @@ public class Koalabr8 extends JPanel  {
                 boulder.setX(boulder.getX() + move);
             }
         }
+        boulder.updateHitBox(boulder.getX(), boulder.getY());
+    }
+
+    public static void boulderBoulder(Boulder b1, Boulder b2) {
+        if (b1.getHitBox().intersects(b2.getHitBox())) {
+            if (b1.getX() < b2.getX() && b1.getX() > b2.getX() - 50) {
+                if (b2.getX() >= Koalabr8.WORLD_WIDTH - 100) {
+                    b2.setX(b2.getX());
+                    b1.setX(b1.getX() - move);
+                } else {
+                    b2.setX(b2.getX() + move);
+                    b1.setX(b1.getX());
+                }
+            } else if (b1.getX() > b2.getX() && b1.getX() < b2.getX() + 50) {
+                if (b2.getX() <= 50) {
+                    b2.setX(b2.getX());
+                    b1.setX(b1.getX() + move);
+                } else {
+                    b2.setX(b2.getX() - move);
+                    b1.setX(b1.getX());
+                }
+            } else if (b1.getY() < b2.getY() && b1.getY() > b2.getY() - 50) {
+                if (b2.getY() >= Koalabr8.WORLD_HEIGHT - 100) {
+                    b2.setY(b2.getY());
+                    b1.setY(b1.getY() - move);
+                } else {
+                    b2.setY(b2.getY() + move);
+                    b1.setY(b1.getY());
+                }
+            } else if (b1.getY() > b2.getY() && b1.getY() < b2.getY() + 50) {
+                if (b2.getY() <= 50) {
+                    b2.setY(b2.getY());
+                    b1.setY(b1.getY() - move);
+                } else {
+                    b2.setY(b2.getY() - move);
+                    b1.setY(b1.getY());
+                }
+            }
+        }
     }
 
     public static void tntBump(Koala koala, TNT tnt) {
         if (koala.getHitBox().intersects(tnt.getHitBox())) {
-            level = 0;
             count++;
-            if (count < 3) {
-                System.out.println("You died. :(");
+            if (count == 1) {
+                System.out.println("You hit tnt on level " + level + " and died. :(");
             }
+            level = 0;
+        }
+    }
+
+    public static void sawBump(Koala koala, Saw saw) {
+        if (koala.getHitBox().intersects(saw.getHitBox())) {
+            count++;
+            if (count == 1) {
+                System.out.println("You hit a saw on level " + level + " and died. :(");
+            }
+            level = 0;
         }
     }
 
@@ -804,6 +900,7 @@ public class Koalabr8 extends JPanel  {
             this.boulders.forEach(b -> b.drawImage(buffer));
 //            this.switches.forEach(s -> s.drawImage(buffer));
             this.nss.forEach(s -> s.drawImage(buffer));
+            this.fss.forEach(f -> f.drawImage(buffer));
             this.tss.forEach(s -> s.drawImage(buffer));
             this.pss.forEach(s -> s.drawImage(buffer));
             this.exits.forEach(e -> e.drawImage(buffer));
@@ -812,7 +909,7 @@ public class Koalabr8 extends JPanel  {
             this.tls.forEach(l -> l.drawImage(buffer));
             this.pls.forEach(l -> l.drawImage(buffer));
             this.tnts.forEach(t -> t.drawImage(buffer));
-//            this.saws.forEach(s -> s.drawImage(buffer));
+            this.saws.forEach(s -> s.drawImage(buffer));
 //            this.koalaOne.drawImage(buffer);
 //            this.koalaTwo.drawImage(buffer);
 //            this.koalaThree.drawImage(buffer);
@@ -832,7 +929,7 @@ public class Koalabr8 extends JPanel  {
             buffer.setColor(Color.RED);
 //            g2.drawRect(200,200,150,50);
 //            Rectangle b = new Rectangle(200, 200, 100, 200);
-//            g2.setColor(Color.RED);
+//            g2.setColor(Color.BLACK);
 //            g2.fill(b);
             buffer.fillRect(0, 0, Koalabr8.WORLD_WIDTH, Koalabr8.WORLD_HEIGHT);
             BufferedImage boom = null;
@@ -846,26 +943,5 @@ public class Koalabr8 extends JPanel  {
 //            buffer = world.terminate();
         }
         g2.drawImage(world, 0, 0, null);
-////        BufferedImage picture =
-////        world.getSubimage((Koalabr8.SCREEN_WIDTH), Koalabr8.SCREEN_HEIGHT);
-////        this.tankTwo.drawImage(buffer);
-////        //BufferedImage leftHalf = world.getSubimage(tankOne.getX()-200, tankOne.getY(), TankRotationExample.SCREEN_WIDTH/2, TankRotationExample.SCREEN_HEIGHT);
-////        //BufferedImage rightHalf = world.getSubimage(tankTwo.getX(), tankTwo.getY(), TankRotationExample.SCREEN_WIDTH/2, TankRotationExample.SCREEN_HEIGHT);
-////        g2.drawImage(leftHalf,0,0,null);
-////        g2.drawImage(rightHalf,TankRotationExample.SCREEN_WIDTH/2,0,null);
-////        Rectangle splitLine = new Rectangle((TankRotationExample.SCREEN_WIDTH/2)-4, 0, 4, TankRotationExample.SCREEN_HEIGHT);
-////        g2.setColor(Color.DARK_GRAY);
-////        g2.fill(splitLine);
-////        //g2.drawRect((TankRotationExample.SCREEN_WIDTH/2)-2, 0, 2, TankRotationExample.SCREEN_HEIGHT);
-////        BufferedImage t1Life = world.getSubimage(125, 1805, 145, 145);
-////        g2.drawImage(t1Life, (SCREEN_WIDTH/2)-265, SCREEN_HEIGHT-205, null);
-////        BufferedImage t2Life = world.getSubimage(1745, 1805, 145, 145);
-////        g2.drawImage(t2Life, (SCREEN_WIDTH/2)+125, SCREEN_HEIGHT-205, null);
-////        BufferedImage minimap = world.getSubimage(0, 0, Koalabr8.WORLD_WIDTH, Koalabr8.WORLD_HEIGHT);
-////        g2.scale(.1, .1);
-////        g2.drawImage(minimap, (SCREEN_WIDTH*5)-(minimap.getWidth()/2), (SCREEN_HEIGHT*10)-(minimap.getHeight()+100), null);
-//
-//
-//
     }
 }
